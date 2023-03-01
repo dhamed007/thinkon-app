@@ -81,7 +81,6 @@ spec:
       storage: 100Mi
 
 ---
-
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
