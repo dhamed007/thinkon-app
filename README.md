@@ -43,3 +43,5 @@ Use helm to configure Prometheus for monitoring the cluster and grafana for visu
 Use helm to deploy EFK for log management and data analytics
 
 Use Helm Charts to deploy Nginx-ingress to expose our application externally.
+
+
