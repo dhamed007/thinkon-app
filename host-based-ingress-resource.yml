@@ -1,0 +1,18 @@
+ apiVersion: extensions/v1beta1
+ kind: Ingress
+ metadata:
+   name: ingress-resource-2
+ spec:
+   rules:
+   - host: shifts.thinkon.com
+     http:
+       paths:
+       - backend:
+           serviceName: shiftsappsvc
+           servicePort: 80
+   - host: users.thinkon.com
+     http:
+       paths:
+       - backend:
+           serviceName:  usersappsvc
+           servicePort: 80
