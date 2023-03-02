@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-resource-2
+spec:
+  rules:
+  - host: example.com
+    http:
+      paths:
+      - path: /shiftsapp
+        backend:
+          serviceName: shiftsappsvc
+          servicePort: 80
+      - path: /usersapp
+        backend:
+          serviceName: usersappsvc
+          servicePort: 80
