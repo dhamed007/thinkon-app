@@ -40,7 +40,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: users-appsvc
+  name: usersappsvc
 spec:
   selector:
     app: springapp
