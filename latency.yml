@@ -1,0 +1,201 @@
+
+#prometheus-config-map.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-server-conf
+  namespace: monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+    - job_name: 'prometheus'
+      static_configs:
+      - targets: ['localhost:9090']
+    - job_name: 'your-service-name'
+      scrape_interval: 5s
+      metrics_path: /metrics
+      scheme: http
+      static_configs:
+      - targets: ['your-service-name:port']
+
+---
+   #prometheus-deployment.yaml:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-server
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-server
+  template:
+    metadata:
+      labels:
+        app: prometheus-server
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v2.30.0
+        args:
+          - "--config.file=/etc/prometheus/prometheus.yml"
+          - "--storage.tsdb.path=/prometheus"
+          - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+          - "--web.console.templates=/usr/share/prometheus/consoles"
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+        - name: prometheus-config-volume
+          mountPath: /etc/prometheus/
+        - name: prometheus-data
+          mountPath: /prometheus
+      volumes:
+      - name: prometheus-config-volume
+        configMap:
+          name: prometheus-server-conf
+      - name: prometheus-data
+        emptyDir: {}
+
+---
+#prometheus-service.yaml:
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-server
+  namespace: monitoring
+spec:
+  selector:
+    app: prometheus-server
+  type: NodePort
+  ports:
+  - name: http
+    port: 9090
+    targetPort: 9090
+
+---
+#alertmanager-config-map.yaml:
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: monitoring
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+    receivers:
+    - name: kubernetes-webhook
+      webhook_configs:
+      - url: http://<KUBERNETES_API_SERVER>/api/v1/namespaces/default/alerts
+    route:
+      group_by: ['alertname']
+      receiver: kubernetes-webhook
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 1h
+Note: Replace <KUBERNETES_API_SERVER> with your Kubernetes API server URL.
+---
+#alertmanager-deployment.yaml:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+      - name: alertmanager
+        image: prom/alertmanager:v0.23.0
+        args:
+          - "--config.file=/etc/alertmanager/config.yml"
+          - "--storage.path=/alertmanager"
+        ports:
+        - containerPort: 9093
+        volumeMounts:
+        - name: alertmanager-config-volume
+          mountPath: /etc/alert
+---
+#alertmanager-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: monitoring
+  labels:
+    app: alertmanager
+spec:
+  selector:
+    app: alertmanager
+  type: ClusterIP
+  ports:
+  - name: web
+    port: 9093
+    targetPort: web
+  - name: mesh-tcp
+    port: 9094
+    targetPort: mesh-tcp
+---
+#prometheus-rules.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: latency-scaling-rules
+  namespace: monitoring
+spec:
+  groups:
+  - name: latency-scaling-rules
+    rules:
+    - alert: HighNetworkLatency
+      expr: avg(rate(http_request_duration_seconds_sum[5m])) by (pod) > 0.5
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: High network latency detected
+        description: Average network latency for pod {{ $labels.pod }} is above 500ms for the last 5 minutes.
+---
+#scaling-policy.yaml
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: latency-scaler
+  namespace: monitoring
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-deployment
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Pods
+    pods:
+      metricName: http_request_duration_seconds_sum
+      targetAverageValue: 0.5
+
+---
+#alertmanager-kubernetes.yaml
+global:
+  resolve_timeout: 5m
+route:
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+  receiver: kubernetes-webhook
+receivers:
+- name: kubernetes-webhook
+  webhook_configs:
+  - url: 'http://kubernetes.default.svc:443/api/v1/namespaces/default/alerts'
+    send_resolved: true
