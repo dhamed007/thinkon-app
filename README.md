@@ -38,7 +38,7 @@ Create service accounts for applications
 Create Roles and ClusterRoles to define authorizations
 Map Roles and ClusterRoles to group and service accounts using RoleBingings and ClusterRoleBindings
 
-Use helm to configure Prometheus for monitoring the cluster and grafana for visualisation
+Use helm to deploy Prometheus for monitoring the cluster and grafana for visualisation
 Configure prometheus to scrap latency metric from application.
 apply prometheusRule object that defines a recording rule for the latency metric you want to use for scaling
 Deploy the Prometheus Adapter.
