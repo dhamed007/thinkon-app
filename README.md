@@ -41,7 +41,8 @@ Map Roles and ClusterRoles to group and service accounts using RoleBingings and 
 Use helm to configure Prometheus for monitoring the cluster and grafana for visualisation
 Configure prometheus to scrap latency metric from application.
 apply prometheusRule object that defines a recording rule for the latency metric you want to use for scaling
-
+Deploy the Prometheus Adapter.
+Create a HorizontalPodAutoscaler object that uses the latency metric as a scaling metric.
 
 Use helm to deploy EFK for log management and data analytics
 
