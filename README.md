@@ -39,9 +39,13 @@ Create Roles and ClusterRoles to define authorizations
 Map Roles and ClusterRoles to group and service accounts using RoleBingings and ClusterRoleBindings
 
 Use helm to configure Prometheus for monitoring the cluster and grafana for visualisation
+Configure prometheus to scrap latency metric from application.
+apply prometheusRule object that defines a recording rule for the latency metric you want to use for scaling
+
 
 Use helm to deploy EFK for log management and data analytics
 
 Use Helm Charts to deploy Nginx-ingress to expose our application externally.
+Use ingress.yml for routing rules: Host based / Pathbased
 
 
