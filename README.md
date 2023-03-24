@@ -1,4 +1,4 @@
-# thinkon-take-home
+# thinkon-app
 Kubernetes Deployment for Users and Shifts APIs
 
 This repository contains Kubernetes resources (yaml) for deploying two containers that scale independently from one another. One container runs code that runs a small API that returns users from a database hosted in the cluster, while the other container runs code that runs a small API that returns shifts from a database hosted in the cluster. We could also host our db outside our cluster and connect to it using External Name service.
